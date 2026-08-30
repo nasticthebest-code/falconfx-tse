@@ -1,0 +1,25 @@
+[project]
+name = "falconfx-traffic-signal-engine"
+version = "1.0.0"
+description = "Traffic intelligence signal generator for FalconFX Booster"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.30,<1",
+    "requests>=2.31,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "httpx>=0.27,<1",
+    "pytest>=8,<10",
+    "pytest-asyncio>=0.23,<2",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
