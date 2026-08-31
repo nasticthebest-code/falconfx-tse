@@ -49,24 +49,25 @@ class TomTomTrafficProvider(TrafficProvider):
 
     def _fetch_point(self, point: tuple[float, float], index: int) -> TrafficSample:
         """Fetch one flow segment and normalize the provider response."""
+        p0 = float(point[0])
+        p1 = float(point[1])
+
+        # Accra lat is positive (~5.5 to 5.7), lng is negative (~-0.15 to -0.3)
+        if p0 < 0 < p1:
+            lat, lng = p1, p0
+        else:
+            lat, lng = p0, p1
+
+        point_str = f"{lat:.6f},{lng:.6f}"
+        now = datetime.now(timezone.utc)
+
+        params = {
+            "point": point_str,
+            "unit": "KMPH",
+            "key": str(self.api_key).strip(),
+        }
+
         try:
-            p0 = float(point[0])
-            p1 = float(point[1])
-
-            # Accra lat is positive (~5.5 to 5.7), lng is negative (~-0.15 to -0.3)
-            if p0 < 0 < p1:
-                lat, lng = p1, p0
-            else:
-                lat, lng = p0, p1
-
-            point_str = f"{lat:.6f},{lng:.6f}"
-
-            params = {
-                "point": point_str,
-                "unit": "KMPH",
-                "key": str(self.api_key).strip(),
-            }
-
             response = requests.get(
                 self.endpoint,
                 params=params,
@@ -76,8 +77,11 @@ class TomTomTrafficProvider(TrafficProvider):
             if response.status_code == 200:
                 data = response.json().get("flowSegmentData", {})
                 return TrafficSample(
+                    latitude=lat,
+                    longitude=lng,
                     current_speed=float(data.get("currentSpeed", 35.0)),
                     free_flow_speed=float(data.get("freeFlowSpeed", 50.0)),
+                    observed_at=now,
                 )
             else:
                 logger.warning(
@@ -86,9 +90,11 @@ class TomTomTrafficProvider(TrafficProvider):
         except Exception as exc:
             logger.warning(f"TomTom error for point {index}: {exc}")
 
-        # Safe fallback
+        # Safe fallback with all required fields
         return TrafficSample(
+            latitude=lat,
+            longitude=lng,
             current_speed=35.0,
             free_flow_speed=50.0,
+            observed_at=now,
         )
-
