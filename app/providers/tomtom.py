@@ -10,9 +10,14 @@ import requests
 
 from app.config import Settings
 from app.models import CorridorTrafficData, TrafficSample
-from app.providers.base import TrafficProvider, TomTomProviderError
+from app.providers.base import TrafficProvider
 
 logger = logging.getLogger("falconfx.tse.tomtom")
+
+
+class TomTomProviderError(Exception):
+    """Custom exception for TomTom API errors."""
+    pass
 
 
 class TomTomTrafficProvider(TrafficProvider):
