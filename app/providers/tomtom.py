@@ -23,6 +23,8 @@ class TomTomProviderError(Exception):
 class TomTomTrafficProvider(TrafficProvider):
     """Fetches real-time flow data from TomTom Traffic Flow API."""
 
+    name = "tomtom"  # <-- This fixes the AttributeError immediately
+
     def __init__(self, settings: Settings):
         self.settings = settings
         self.api_key = getattr(settings, "tomtom_api_key", getattr(settings, "TOMTOM_API_KEY", ""))
@@ -52,7 +54,7 @@ class TomTomTrafficProvider(TrafficProvider):
         p0 = float(point[0])
         p1 = float(point[1])
 
-        # Accra lat is positive (~5.5 to 5.7), lng is negative (~-0.15 to -0.3)
+        # Accra coordinates: lat positive (~5.5 to 5.7), lng negative (~-0.15 to -0.3)
         if p0 < 0 < p1:
             lat, lng = p1, p0
         else:
@@ -90,7 +92,7 @@ class TomTomTrafficProvider(TrafficProvider):
         except Exception as exc:
             logger.warning(f"TomTom error for point {index}: {exc}")
 
-        # Safe fallback with all required fields
+        # Fallback providing all 5 required model fields
         return TrafficSample(
             latitude=lat,
             longitude=lng,
