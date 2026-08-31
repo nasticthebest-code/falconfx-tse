@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timezone
-import requests
 import logging
+import requests
 
-from app.config import Settings
-from app.models import CorridorConfig, CorridorTrafficData, TrafficSample
+from app.config import Settings, CorridorConfig
+from app.models import CorridorTrafficData, TrafficSample
 from app.providers.base import TrafficProvider, TomTomProviderError
 
 logger = logging.getLogger("falconfx.tse.tomtom")
@@ -20,7 +20,6 @@ class TomTomTrafficProvider(TrafficProvider):
     def __init__(self, settings: Settings):
         self.settings = settings
         self.api_key = settings.tomtom_api_key
-        # Standard TomTom flow segment endpoint
         self.endpoint = (
             "https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json"
         )
@@ -44,14 +43,12 @@ class TomTomTrafficProvider(TrafficProvider):
         p0 = float(point[0])
         p1 = float(point[1])
 
-        # Accra lat is positive (~5.5 to 5.7), lng is negative (~-0.15 to -0.3)
-        # Always enforce (latitude, longitude) ordering
+        # Ensure (lat, lng) order for TomTom
         if p0 < 0 < p1:
             lat, lng = p1, p0
         else:
             lat, lng = p0, p1
 
-        # Format strictly with 6 decimals and no extra whitespace
         point_str = f"{lat:.6f},{lng:.6f}"
 
         params = {
@@ -82,7 +79,7 @@ class TomTomTrafficProvider(TrafficProvider):
         except Exception as exc:
             logger.warning(f"TomTom network error for point {index}: {exc}")
 
-        # Non-blocking fallback so initial server startup never fails
+        # Non-blocking fallback so startup and background loop never crash
         return TrafficSample(
             point_index=index,
             current_speed=35.0,
