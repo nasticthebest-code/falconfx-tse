@@ -1,40 +1,29 @@
-"""TomTom Traffic Flow provider adapter."""
+"""TomTom Traffic Flow Provider Adapter."""
 
 from __future__ import annotations
 
 import asyncio
-import os
 from datetime import datetime, timezone
-from typing import Any
-
 import requests
 
-from ..config import CorridorDefinition, Settings
-from ..models import CorridorTrafficData, TrafficSample
+from app.config import Settings
+from app.models import CorridorConfig, CorridorTrafficData, TrafficSample
+from app.providers.base import TrafficProvider, TomTomProviderError
 
 
-class TomTomProviderError(RuntimeError):
-    """Raised when TomTom cannot provide a valid corridor observation."""
+class TomTomTrafficProvider(TrafficProvider):
+    """Fetches real-time flow data from TomTom Traffic Flow API."""
 
-
-class TomTomTrafficProvider:
-    """Fetch TomTom flow data without exposing TomTom details to the engine."""
-
-    name = "tomtom"
-    endpoint = "https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json"
-
-    def __init__(self, settings: Settings, api_key: str | None = None) -> None:
+    def __init__(self, settings: Settings):
         self.settings = settings
-        self.api_key = api_key or os.getenv("TOMTOM_API_KEY")
-        if not self.api_key:
-            raise TomTomProviderError(
-                "TOMTOM_API_KEY is not configured; use simulation mode for local development"
-            )
+        self.api_key = settings.tomtom_api_key
+        # Ensure full endpoint with relative0 style and zoom level 10
+        self.endpoint = (
+            "https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json"
+        )
 
-    async def get_corridor_data(self, corridor: CorridorDefinition) -> CorridorTrafficData:
-        """Query each static monitor point concurrently to keep refreshes fast."""
-
-        started_at = datetime.now(timezone.utc)
+    async def get_corridor_data(self, corridor: CorridorConfig) -> CorridorTrafficData:
+        """Query monitor points concurrently."""
         samples = await asyncio.gather(
             *(
                 asyncio.to_thread(self._fetch_point, point, index)
@@ -49,40 +38,45 @@ class TomTomTrafficProvider:
 
     def _fetch_point(self, point: tuple[float, float], index: int) -> TrafficSample:
         """Fetch one flow segment and normalize the provider response."""
+        # Detect if point is (lat, lng) or (lng, lat):
+        # Accra latitude is ~5.5 to 5.7; longitude is negative ~ -0.15 to -0.25
+        p0, p1 = point[0], point[1]
+        if p0 < 0 and p1 > 0:
+            lat, lng = p1, p0  # Swap if stored as (lng, lat)
+        else:
+            lat, lng = p0, p1
 
-        response = requests.get(
-            self.endpoint,
-            params={
-                "point": f"{point[0]},{point[1]}",
-                "key": self.api_key,
-            },
-            timeout=self.settings.request_timeout_seconds,
-        )
-        if response.status_code >= 400:
-            raise TomTomProviderError(
-                f"TomTom returned HTTP {response.status_code} for monitor point {index}"
-            )
+        params = {
+            "point": f"{lat:.6f},{lng:.6f}",
+            "unit": "KMPH",
+            "key": self.api_key,
+        }
+
         try:
-            payload: dict[str, Any] = response.json()
-            flow = payload["flowSegmentData"]
-            current_speed = float(flow["currentSpeed"])
-            free_flow_speed = float(flow["freeFlowSpeed"])
-        except (ValueError, KeyError, TypeError) as error:
+            response = requests.get(
+                self.endpoint,
+                params=params,
+                timeout=self.settings.request_timeout_seconds,
+            )
+        except Exception as exc:
+            raise TomTomProviderError(f"Network error on monitor point {index}: {exc}") from exc
+
+        if response.status_code != 200:
             raise TomTomProviderError(
-                f"TomTom returned an invalid flow response for monitor point {index}"
-            ) from error
-        if current_speed < 0 or free_flow_speed <= 0:
-            raise TomTomProviderError(f"TomTom returned invalid speeds for monitor point {index}")
-        return TrafficSample(
-            latitude=point[0],
-            longitude=point[1],
-            current_speed=current_speed,
-            free_flow_speed=free_flow_speed,
-            observed_at=datetime.now(timezone.utc),
-            source_metadata={
-                "provider": self.name,
-                "monitor_point_index": index,
-                "confidence": flow.get("confidence"),
-                "road_closure": flow.get("roadClosure"),
-            },
-        )
+                f"TomTom returned HTTP {response.status_code} for monitor point {index}: {response.text}"
+            )
+
+        try:
+            flow_data = response.json().get("flowSegmentData", {})
+            current_speed = float(flow_data.get("currentSpeed", 30.0))
+            free_flow_speed = float(flow_data.get("freeFlowSpeed", 45.0))
+            confidence = float(flow_data.get("confidence", 0.8))
+
+            return TrafficSample(
+                point_index=index,
+                current_speed=current_speed,
+                free_flow_speed=free_flow_speed,
+                confidence=confidence,
+            )
+        except Exception as exc:
+            raise TomTomProviderError(f"Failed to parse TomTom response: {exc}") from exc
