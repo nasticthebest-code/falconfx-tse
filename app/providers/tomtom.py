@@ -78,7 +78,6 @@ class TomTomTrafficProvider(TrafficProvider):
                 return TrafficSample(
                     current_speed=float(data.get("currentSpeed", 35.0)),
                     free_flow_speed=float(data.get("freeFlowSpeed", 50.0)),
-                    confidence=float(data.get("confidence", 0.8)),
                 )
             else:
                 logger.warning(
@@ -91,5 +90,5 @@ class TomTomTrafficProvider(TrafficProvider):
         return TrafficSample(
             current_speed=35.0,
             free_flow_speed=50.0,
-            confidence=0.5,
         )
+
