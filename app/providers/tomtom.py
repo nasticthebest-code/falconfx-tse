@@ -25,7 +25,6 @@ class TomTomTrafficProvider(TrafficProvider):
 
     def __init__(self, settings: Settings):
         self.settings = settings
-        # Safely get the API key, defaulting to empty string if missing
         self.api_key = getattr(settings, "tomtom_api_key", getattr(settings, "TOMTOM_API_KEY", ""))
         self.endpoint = (
             "https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json"
@@ -77,7 +76,6 @@ class TomTomTrafficProvider(TrafficProvider):
             if response.status_code == 200:
                 data = response.json().get("flowSegmentData", {})
                 return TrafficSample(
-                    point_index=index,
                     current_speed=float(data.get("currentSpeed", 35.0)),
                     free_flow_speed=float(data.get("freeFlowSpeed", 50.0)),
                     confidence=float(data.get("confidence", 0.8)),
@@ -89,9 +87,8 @@ class TomTomTrafficProvider(TrafficProvider):
         except Exception as exc:
             logger.warning(f"TomTom error for point {index}: {exc}")
 
-        # Safe fallback so server startup never fails
+        # Safe fallback
         return TrafficSample(
-            point_index=index,
             current_speed=35.0,
             free_flow_speed=50.0,
             confidence=0.5,
