@@ -5,9 +5,10 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime, timezone
 import logging
+from typing import Any
 import requests
 
-from app.config import Settings, CorridorConfig
+from app.config import Settings
 from app.models import CorridorTrafficData, TrafficSample
 from app.providers.base import TrafficProvider, TomTomProviderError
 
@@ -24,16 +25,19 @@ class TomTomTrafficProvider(TrafficProvider):
             "https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json"
         )
 
-    async def get_corridor_data(self, corridor: CorridorConfig) -> CorridorTrafficData:
+    async def get_corridor_data(self, corridor: Any) -> CorridorTrafficData:
         """Query monitor points concurrently."""
+        points = getattr(corridor, "monitor_points", [])
+        corridor_id = getattr(corridor, "corridor_id", "unknown")
+
         samples = await asyncio.gather(
             *(
                 asyncio.to_thread(self._fetch_point, point, index)
-                for index, point in enumerate(corridor.monitor_points)
+                for index, point in enumerate(points)
             )
         )
         return CorridorTrafficData(
-            corridor_id=corridor.corridor_id,
+            corridor_id=corridor_id,
             samples=tuple(samples),
             fetched_at=datetime.now(timezone.utc),
         )
@@ -43,7 +47,7 @@ class TomTomTrafficProvider(TrafficProvider):
         p0 = float(point[0])
         p1 = float(point[1])
 
-        # Ensure (lat, lng) order for TomTom
+        # Accra lat is positive (~5.5 to 5.7), lng is negative (~-0.15 to -0.3)
         if p0 < 0 < p1:
             lat, lng = p1, p0
         else:
@@ -54,7 +58,7 @@ class TomTomTrafficProvider(TrafficProvider):
         params = {
             "point": point_str,
             "unit": "KMPH",
-            "key": self.api_key.strip() if self.api_key else "",
+            "key": (self.api_key or "").strip(),
         }
 
         try:
@@ -63,7 +67,6 @@ class TomTomTrafficProvider(TrafficProvider):
                 params=params,
                 timeout=self.settings.request_timeout_seconds,
             )
-            
             if response.status_code == 200:
                 data = response.json().get("flowSegmentData", {})
                 return TrafficSample(
@@ -74,12 +77,12 @@ class TomTomTrafficProvider(TrafficProvider):
                 )
             else:
                 logger.warning(
-                    f"TomTom HTTP {response.status_code} for point {index} ({point_str}): {response.text}"
+                    f"TomTom HTTP {response.status_code} for point {index} ({point_str})"
                 )
         except Exception as exc:
             logger.warning(f"TomTom network error for point {index}: {exc}")
 
-        # Non-blocking fallback so startup and background loop never crash
+        # Safe fallback so server startup never fails
         return TrafficSample(
             point_index=index,
             current_speed=35.0,
