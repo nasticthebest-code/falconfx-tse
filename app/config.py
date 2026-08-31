@@ -158,7 +158,7 @@ CORRIDORS: dict[str, CorridorDefinition] = {
     "N1": CorridorDefinition(
         "N1",
         "N1",
-        ((5.5350, -0.4160), (5.5680, -0.2350), (5.6030, -0.2050)),
+        ((5.5950, -0.2350), (5.6130, -0.2280), (5.6250, -0.2100)),
         (0.87, 0.49),
         ("Kasoa", "Kaneshie", "Circle"),
         3.0,
@@ -166,7 +166,7 @@ CORRIDORS: dict[str, CorridorDefinition] = {
     "Spintex": CorridorDefinition(
         "Spintex",
         "Spintex",
-        ((5.6050, -0.1650), (5.5890, -0.1460), (5.5680, -0.1270)),
+        ((5.6020, -0.1500), (5.6150, -0.1250), (5.6230, -0.1050)),
         (-0.68, 0.73),
         ("Spintex", "Teshie"),
         2.5,
@@ -174,7 +174,7 @@ CORRIDORS: dict[str, CorridorDefinition] = {
     "Legon": CorridorDefinition(
         "Legon",
         "Legon",
-        ((5.6400, -0.2050), (5.6500, -0.1870), (5.6810, -0.1900)),
+        ((5.6320, -0.1780), (5.6500, -0.1750), (5.6700, -0.1700)),
         (0.93, 0.06),
         ("Legon", "Achimota"),
         2.5,
@@ -182,7 +182,7 @@ CORRIDORS: dict[str, CorridorDefinition] = {
     "Madina": CorridorDefinition(
         "Madina",
         "Madina",
-        ((5.6810, -0.1900), (5.6920, -0.1660), (5.7050, -0.1530)),
+        ((5.6650, -0.1680), (5.6800, -0.1650), (5.6950, -0.1600)),
         (0.52, 0.85),
         ("Madina", "Legon"),
         2.5,
@@ -190,7 +190,7 @@ CORRIDORS: dict[str, CorridorDefinition] = {
     "Airport": CorridorDefinition(
         "Airport",
         "Airport",
-        ((5.6050, -0.1710), (5.6000, -0.1880), (5.5910, -0.2020)),
+        ((5.5800, -0.1750), (5.5900, -0.1800), (5.5700, -0.1700)),
         (-0.43, -0.90),
         ("Legon", "Circle"),
         2.5,
@@ -198,7 +198,7 @@ CORRIDORS: dict[str, CorridorDefinition] = {
     "Circle": CorridorDefinition(
         "Circle",
         "Circle",
-        ((5.5500, -0.2050), (5.5600, -0.2050), (5.5750, -0.1980)),
+        ((5.5580, -0.2150), (5.5520, -0.2200), (5.5650, -0.2100)),
         (0.91, 0.41),
         ("Circle", "Kaneshie"),
         2.5,
@@ -206,7 +206,7 @@ CORRIDORS: dict[str, CorridorDefinition] = {
     "Lapaz": CorridorDefinition(
         "Lapaz",
         "Lapaz",
-        ((5.6220, -0.2510), (5.6350, -0.2460), (5.6480, -0.2370)),
+        ((5.5920, -0.2400), (5.5980, -0.2480), (5.5880, -0.2300)),
         (0.83, 0.55),
         ("Lapaz", "Achimota"),
         2.5,
@@ -214,7 +214,7 @@ CORRIDORS: dict[str, CorridorDefinition] = {
     "Achimota": CorridorDefinition(
         "Achimota",
         "Achimota",
-        ((5.6330, -0.2430), (5.6550, -0.2350), (5.6750, -0.2250)),
+        ((5.6050, -0.2200), (5.6127, -0.2343), (5.6280, -0.2450)),
         (0.94, 0.34),
         ("Achimota", "Legon"),
         2.5,
