@@ -36,7 +36,7 @@ class TomTomTrafficProvider(TrafficProvider):
             logger.error("CRITICAL: TOMTOM_API_KEY environment variable is missing or empty!")
 
         self.endpoint = (
-            "https://api.tomtom.com/traffic/services/4/flowSegmentData/relative0/10/json"
+            "https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json"
         )
 
     async def get_corridor_data(self, corridor: Any) -> CorridorTrafficData:
