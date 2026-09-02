@@ -19,6 +19,7 @@ from .core.engine import SignalEngine
 from .models import TrafficSignal
 from .providers.simulation import SCENARIOS, SimulationTrafficProvider
 from .providers.tomtom import TomTomTrafficProvider
+from .providers.mapbox import MapboxTrafficProvider
 
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO"),
@@ -33,6 +34,8 @@ class SimulationScenarioRequest(BaseModel):
 def create_provider(settings: Settings):
     if settings.provider_name == "simulation":
         return SimulationTrafficProvider(settings.simulation_scenario)
+    if settings.provider_name == "mapbox":
+        return MapboxTrafficProvider(settings)
     return TomTomTrafficProvider(settings)
 
 
